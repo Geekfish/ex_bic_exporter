@@ -7,6 +7,7 @@ defmodule BicExporter.MixProject do
   def project do
     [
       app: :ex_bic_exporter,
+      description: "A library to extract data from ISO BIC directory PDF files",
       version: @version,
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
@@ -32,7 +33,7 @@ defmodule BicExporter.MixProject do
 
   defp deps do
     [
-      {:rustler, "> 0.0.0", optional: true},
+      {:rustler, ">= 0.0.0", optional: true},
       {:rustler_precompiled, "~> 0.8"},
       {:ex_doc, "~> 0.30", only: :dev, runtime: false}
     ]
