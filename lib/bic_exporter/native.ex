@@ -1,9 +1,13 @@
 defmodule BicExporter.Native do
   @moduledoc false
+  version = Mix.Project.config()[:version]
 
   use Rustler,
     otp_app: :ex_bic_exporter,
-    crate: :bic_exporter
+    crate: :bic_exporter,
+    base_url: "https://github.com/Geekfish/ex_bic_exporter/releases/download/v#{version}",
+    force_build: System.get_env("RUSTLER_PRECOMPILATION_EXAMPLE_BUILD") in ["1", "true"],
+    version: version
 
   # NIF stubs - these are replaced when the NIF is loaded
 
