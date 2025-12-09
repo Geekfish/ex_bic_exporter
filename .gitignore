@@ -1,0 +1,31 @@
+# Elixir
+/_build/
+/deps/
+/*.ez
+*.beam
+/doc/
+.fetch
+erl_crash.dump
+
+# Elixir test artifacts
+/cover/
+/.elixir_ls/
+
+# Rustler NIF artifacts
+/priv/native/
+
+# IDE
+.expert/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+/tmp/
+

@@ -1,0 +1,13 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Test artifacts
+*.csv
+!tests/fixtures/*.csv
+
+# PDF files (except test fixtures)
+*.pdf
+!tests/fixtures/*.pdf
+
