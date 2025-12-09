@@ -32,7 +32,7 @@ defmodule BicExporter.MixProject do
 
   defp deps do
     [
-      {:rustler, ">= 0.36.0"},
+      {:rustler, "> 0.0.0", optional: true},
       {:rustler_precompiled, "~> 0.8"},
       {:ex_doc, "~> 0.30", only: :dev, runtime: false}
     ]
@@ -52,6 +52,7 @@ defmodule BicExporter.MixProject do
         "native/bic_exporter/Cargo.toml",
         "native/bic_exporter/Cargo.lock",
         "native/bic_exporter/Cross.toml",
+        "checksum-*.exs",
         "mix.exs",
         "README.md",
         "LICENSE*"
