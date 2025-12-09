@@ -143,3 +143,17 @@ cargo clippy --all-targets --all-features
 # Run Rust tests
 cargo test
 ```
+
+
+## Release
+
+For maintainers:
+
+- Bump the version in `mix.exs`
+- Create a new tag, e.g. `git tag v0.2.0`
+- Push the tag to Github `git push origin main --tags`
+- ⚠️ _Wait_ for the Github actions workflows to be successfully completed.
+- Run `mix rustler_precompiled.download BicExporter.Native --all --print`.
+  You may need to set `RUSTLER_PRECOMPILATION_FORCE_BUILD=true` when running this.
+- Publish the package on hex: `mix hex.publish`
+- 🍰
