@@ -2,7 +2,7 @@ defmodule BicExporter.Native do
   @moduledoc false
   version = Mix.Project.config()[:version]
 
-  use Rustler,
+  use RustlerPrecompiled,
     otp_app: :ex_bic_exporter,
     crate: :bic_exporter,
     base_url: "https://github.com/Geekfish/ex_bic_exporter/releases/download/v#{version}",
