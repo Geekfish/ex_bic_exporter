@@ -3,7 +3,6 @@ defmodule BicExporterTest do
 
   @fixture_path Path.join([__DIR__, "..", "native", "bic_exporter", "tests", "fixtures"])
   @pdf_path Path.join(@fixture_path, "ISOBIC-mini.pdf")
-  @expected_csv_path Path.join(@fixture_path, "ISOBIC-mini-expected.csv")
   @expected_record_count 86
 
   describe "headers/0" do
@@ -23,76 +22,90 @@ defmodule BicExporterTest do
     end
   end
 
-  describe "extract_table_from_path/1" do
-    test "extracts records from PDF file" do
-      assert {:ok, records} = BicExporter.extract_table_from_path(@pdf_path)
+  describe "extract_table_from_binary/1" do
+    test "extracts records from PDF binary " do
+      pdf_data = File.read!(@pdf_path)
 
-      assert length(records) == @expected_record_count
+      {:ok, result} = BicExporter.extract_table_from_binary(pdf_data)
+      assert length(result) == @expected_record_count
 
-      # Each record should have 10 fields
-      Enum.each(records, fn record ->
-        assert length(record) == 10
-      end)
+      assert [
+               [
+                 "1997-03-01",
+                 "2024-06-06",
+                 "AAAARSBG",
+                 "XXX",
+                 "YETTEL BANK AD",
+                 "88 OMLADINSKIH BRIGADA BEOGRAD 11070 SERBIA",
+                 "88 OMLADINSKIH BRIGADA BEOGRAD 11070 BEOGRAD SERBIA",
+                 "",
+                 "",
+                 "FIIN"
+               ],
+               [
+                 "1994-03-07",
+                 "2024-07-05",
+                 "AAACKWKW",
+                 "XXX",
+                 "AL MUZAINI EXCHANGE CO. KSCC",
+                 "BLOCK 4, SAUD BIN ABDULAZIZ ST. BUILDING 9 KUWAIT, AL MUBARAKIYA 13022 KUWAIT",
+                 "BUILDING 9 BLOCK 4 SAUD BIN ABDULAZIZ ST. KUWAIT 13022 KUWAIT POB 2156 KUWAIT",
+                 "",
+                 "",
+                 "FIIN"
+               ],
+               [
+                 "2006-06-03",
+                 "2024-11-05",
+                 "AAADFRP1",
+                 "XXX",
+                 "ABN AMRO INVESTMENT SOLUTIONS S.A.",
+                 "119-121 BOULEVARD HAUSSMANN PARIS 75008 FRANCE",
+                 "3 AVENUE HOCHE CHEZ NSM CHEZ NSM PARIS 75008 PARIS FRANCE",
+                 "",
+                 "",
+                 "FIIN"
+               ],
+               [
+                 "2014-07-05",
+                 "2018-04-14",
+                 "AAAJBG21",
+                 "XXX",
+                 "ARCUS ASSET MANAGEMENT JSC",
+                 "BUSINESS CENTER LEGIS 6TH OF SEPTEMBER BLVD. 152 PLOVDIV 4000 BULGARIA",
+                 "BUSINESS CENTER LEGIS 6TH OF SEPTEMBER BLVD. 152 PLOVDIV 4000 PLOVDIV BULGARIA",
+                 "",
+                 "",
+                 "FIIN"
+               ],
+               [
+                 "2006-06-03",
+                 "2021-05-20",
+                 "AAAMFRP1",
+                 "XXX",
+                 "NEXAM",
+                 "14 RUE HALEVY PARIS 75009 FRANCE",
+                 "20 RUE LE PELETIER PARIS 75009 PARIS FRANCE",
+                 "",
+                 "",
+                 "FIIN"
+               ]
+             ] == Enum.take(result, 5)
     end
 
-    test "returns error for non-existent file" do
-      assert {:error, "Failed to open PDF file"} =
-               BicExporter.extract_table_from_path("/non/existent/file.pdf")
-    end
-
-    test "extracts expected BIC codes" do
-      {:ok, [[_, _, first_bic | _] | _]} = BicExporter.extract_table_from_path(@pdf_path)
-
-      assert first_bic == "AAAARSBG"
-    end
-
-    test "records have valid date format in first column" do
-      {:ok, records} = BicExporter.extract_table_from_path(@pdf_path)
+    test "records have valid date format in first two columns" do
+      pdf_data = File.read!(@pdf_path)
+      {:ok, records} = BicExporter.extract_table_from_binary(pdf_data)
 
       Enum.each(records, fn [creation_date, last_update_date | _rest] ->
         assert %Date{} = Date.from_iso8601!(creation_date)
         assert %Date{} = Date.from_iso8601!(last_update_date)
       end)
     end
-  end
-
-  describe "extract_table_from_binary/1" do
-    test "extracts records from PDF binary" do
-      pdf_data = File.read!(@pdf_path)
-
-      assert {:ok, records} = BicExporter.extract_table_from_binary(pdf_data)
-      assert length(records) == @expected_record_count
-    end
-
-    test "returns same results as extract_table_from_path" do
-      {:ok, from_path} = BicExporter.extract_table_from_path(@pdf_path)
-      {:ok, from_binary} = BicExporter.extract_table_from_binary(File.read!(@pdf_path))
-
-      assert from_path == from_binary
-    end
 
     test "returns error for invalid PDF data" do
       assert {:error, "Failed to load PDF from bytes"} =
                BicExporter.extract_table_from_binary("not a pdf")
-    end
-  end
-
-  describe "convert_to_csv/2" do
-    @tag :tmp_dir
-    test "creates CSV file matching expected output", %{tmp_dir: tmp_dir} do
-      output_path = Path.join(tmp_dir, "output.csv")
-
-      assert {:ok, @expected_record_count} = BicExporter.convert_to_csv(@pdf_path, output_path)
-
-      expected_content = File.read!(@expected_csv_path)
-      actual_content = File.read!(output_path)
-
-      assert actual_content == expected_content
-    end
-
-    test "returns error for invalid source path" do
-      assert {:error, "Failed to open PDF file"} =
-               BicExporter.convert_to_csv("/non/existent.pdf", "/tmp/out.csv")
     end
   end
 end

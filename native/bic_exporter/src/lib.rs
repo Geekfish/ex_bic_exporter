@@ -1,7 +1,6 @@
 //! # BIC Exporter
 //!
-//! Extracts BIC (Bank Identifier Code) directory data from ISO 9362 PDF files
-//! and converts it to CSV format.
+//! Extracts BIC (Bank Identifier Code) directory data from ISO 9362 PDF files.
 //!
 //! ## Why Position-Based Extraction?
 //!
@@ -22,13 +21,10 @@
 //! are continuation rows that get merged into the current record.
 
 use anyhow::{Context, Result};
-use csv::Writer;
 use pdf::content::{Op, TextDrawAdjusted};
 use pdf::file::FileOptions;
 use rustler::Binary;
 use std::collections::BTreeMap;
-use std::fs::File;
-use std::path::Path;
 
 // PDF text extraction constants
 //
@@ -423,33 +419,6 @@ fn process_page_rows(ops: &[Op], boundaries: &[f32]) -> Vec<Vec<String>> {
     records
 }
 
-/// Extract table data from PDF bytes in memory.
-///
-/// Processes all pages (except the cover page) and extracts BIC records.
-/// Column boundaries are detected from the first data page and reused
-/// for consistency across all pages.
-pub fn extract_table_from_bytes(data: Vec<u8>) -> Result<Vec<Vec<String>>> {
-    let file = FileOptions::cached()
-        .load(data)
-        .context("Failed to load PDF from bytes")?;
-
-    extract_table_from_file(file)
-}
-
-/// Extract table data from a PDF file path.
-///
-/// Processes all pages (except the cover page) and extracts BIC records.
-/// Column boundaries are detected from the first data page and reused
-/// for consistency across all pages.
-pub fn extract_table_from_pdf(source: &Path) -> Result<Vec<Vec<String>>> {
-    let file = FileOptions::cached()
-        .open(source)
-        .context("Failed to open PDF file")?;
-
-    extract_table_from_file(file)
-}
-
-/// Internal function to extract table data from a loaded PDF file.
 fn extract_table_from_file<T: std::ops::Deref<Target = [u8]>>(
     file: pdf::file::CachedFile<T>,
 ) -> Result<Vec<Vec<String>>> {
@@ -457,7 +426,6 @@ fn extract_table_from_file<T: std::ops::Deref<Target = [u8]>>(
     let mut all_rows: Vec<Vec<String>> = Vec::new();
     let mut boundaries: Option<Vec<f32>> = None;
 
-    // Process each page
     for (page_num, page_result) in file.pages().enumerate() {
         let page = page_result.context(format!("Failed to get page {}", page_num))?;
 
@@ -466,7 +434,6 @@ fn extract_table_from_file<T: std::ops::Deref<Target = [u8]>>(
             continue;
         }
 
-        // Get content operations
         let contents = match &page.contents {
             Some(c) => c,
             None => continue,
@@ -476,7 +443,6 @@ fn extract_table_from_file<T: std::ops::Deref<Target = [u8]>>(
             .operations(&resolver)
             .context(format!("Failed to parse operations on page {}", page_num))?;
 
-        // Extract column boundaries from table lines on first data page
         if boundaries.is_none() {
             let mut detected = extract_column_boundaries_from_ops(&ops);
             if detected.len() >= REQUIRED_BOUNDARIES {
@@ -499,46 +465,26 @@ fn extract_table_from_file<T: std::ops::Deref<Target = [u8]>>(
     Ok(all_rows)
 }
 
-/// Convert a BIC directory PDF to CSV format
+// =================================================================================
+// Public Functions
+// =================================================================================
+
+/// Extract table data from PDF bytes in memory.
 ///
-/// Returns the number of records extracted.
-pub fn convert_bic_pdf_to_csv(source: &Path, destination: &Path) -> Result<usize> {
-    let rows = extract_table_from_pdf(source)?;
+/// Processes all pages (except the cover page) and extracts BIC records.
+/// Column boundaries are detected from the first data page and reused
+/// for consistency across all pages.
+pub fn extract_table_from_bytes(data: Vec<u8>) -> Result<Vec<Vec<String>>> {
+    let file = FileOptions::cached()
+        .load(data)
+        .context("Failed to load PDF from bytes")?;
 
-    // Write to CSV
-    let file = File::create(destination).context("Failed to create output CSV file")?;
-    let mut writer = Writer::from_writer(file);
-
-    // Write headers
-    writer
-        .write_record(HEADERS)
-        .context("Failed to write CSV headers")?;
-
-    // Write data rows
-    let row_count = rows.len();
-    for row in rows {
-        writer
-            .write_record(&row)
-            .context("Failed to write CSV row")?;
-    }
-
-    writer.flush().context("Failed to flush CSV writer")?;
-
-    Ok(row_count)
+    extract_table_from_file(file)
 }
 
 // =============================================================================
 // NIF Functions for Elixir/Erlang integration via Rustler
 // =============================================================================
-
-/// NIF: Extract BIC records from a PDF file path.
-///
-/// Returns `{:ok, records}` on success or `{:error, reason}` on failure.
-/// Each record is a list of 10 strings corresponding to the CSV columns.
-#[rustler::nif(schedule = "DirtyIo")]
-fn extract_table_from_path(source: String) -> Result<Vec<Vec<String>>, String> {
-    extract_table_from_pdf(Path::new(&source)).map_err(|e| e.to_string())
-}
 
 /// NIF: Extract BIC records from PDF binary data.
 ///
@@ -550,14 +496,6 @@ fn extract_table_from_path(source: String) -> Result<Vec<Vec<String>>, String> {
 #[rustler::nif(schedule = "DirtyIo")]
 fn extract_table_from_binary(data: Binary) -> Result<Vec<Vec<String>>, String> {
     extract_table_from_bytes(data.as_slice().to_vec()).map_err(|e| e.to_string())
-}
-
-/// NIF: Convert a BIC directory PDF to CSV format.
-///
-/// Returns `{:ok, record_count}` on success or `{:error, reason}` on failure.
-#[rustler::nif(schedule = "DirtyIo")]
-fn convert_to_csv(source: String, destination: String) -> Result<usize, String> {
-    convert_bic_pdf_to_csv(Path::new(&source), Path::new(&destination)).map_err(|e| e.to_string())
 }
 
 /// NIF: Get the CSV column headers.
@@ -594,6 +532,56 @@ rustler::init!("Elixir.BicExporter.Native");
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+
+    fn fixtures_path() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join("fixtures")
+    }
+
+    #[test]
+    fn test_extract_table_from_bytes_with_fixture() {
+        let pdf_path = fixtures_path().join("ISOBIC-mini.pdf");
+        let expected_csv_path = fixtures_path().join("ISOBIC-mini-expected.csv");
+
+        let pdf_bytes = std::fs::read(&pdf_path).expect("Failed to read PDF file");
+        let actual_rows =
+            extract_table_from_bytes(pdf_bytes).expect("Failed to extract table from bytes");
+
+        let mut csv_reader =
+            csv::Reader::from_path(&expected_csv_path).expect("Failed to open expected CSV");
+
+        let expected_rows: Vec<Vec<String>> = csv_reader
+            // .records() skips the header row, so we don't have to skip it manually
+            .records()
+            .map(|r| {
+                r.expect("Failed to read CSV record")
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect()
+            })
+            .collect();
+
+        assert_eq!(
+            actual_rows.len(),
+            expected_rows.len(),
+            "Row count mismatch. Expected {} rows, got {}",
+            expected_rows.len(),
+            actual_rows.len()
+        );
+
+        for (i, (actual, expected)) in actual_rows.iter().zip(expected_rows.iter()).enumerate() {
+            assert_eq!(
+                actual,
+                expected,
+                "Row {} mismatch.\nExpected: {:?}\nActual: {:?}",
+                i + 1,
+                expected,
+                actual
+            );
+        }
+    }
 
     #[test]
     fn test_is_header_row() {
