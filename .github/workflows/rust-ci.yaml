@@ -1,0 +1,36 @@
+name: Rust CI
+
+on:
+  pull_request:
+    paths:
+      - "native/bic_exporter/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "native/bic_exporter/**"
+
+defaults:
+  run:
+    working-directory: ./native/bic_exporter/
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: ./.github/actions/setup-rust-cache
+      - run: cargo test
+      - run: cargo fmt -- --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-rust-cache
+      - run: cargo test
