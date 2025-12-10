@@ -491,9 +491,12 @@ pub fn extract_table_from_bytes(data: Vec<u8>) -> Result<Vec<Vec<String>>> {
 /// Returns `{:ok, records}` on success or `{:error, reason}` on failure.
 /// Each record is a list of 10 strings corresponding to the CSV columns.
 ///
-/// This is useful when the PDF is already loaded in memory (e.g., downloaded
-/// from a URL or read from a database).
-#[rustler::nif(schedule = "DirtyIo")]
+/// Why schedule = "DirtyCpu"?
+/// From the Rustler docs:
+/// > For functions that may take some time to return - let’s say more than 1 millisecond -
+/// > it is recommended to use the schedule flag. This tells the BEAM to allocate that NIF call to a special scheduler.
+/// Here we have an intensive operation of parsing a big file that can take multiple seconds.
+#[rustler::nif(schedule = "DirtyCpu")]
 fn extract_table_from_binary(data: Binary) -> Result<Vec<Vec<String>>, String> {
     extract_table_from_bytes(data.as_slice().to_vec()).map_err(|e| e.to_string())
 }
