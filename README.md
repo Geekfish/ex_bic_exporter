@@ -57,7 +57,7 @@ Add `bic_exporter` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:bic_exporter, "~> 0.1.0"}
+    {:bic_exporter, "~> 0.2.0"}
   ]
 end
 ```
