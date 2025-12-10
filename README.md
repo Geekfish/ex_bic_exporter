@@ -1,5 +1,9 @@
 # BIC Exporter
 
+[![Licence](https://img.shields.io/github/license/Geekfish/ex_bic_exporter.svg)](https://github.com/Geekfish/ex_bic_exporter/blob/main/LICENSE)
+[![Elixir CI](https://github.com/Geekfish/ex_bic_exporter/actions/workflows/elixir-ci.yaml/badge.svg)](https://github.com/Geekfish/ex_bic_exporter/actions/workflows/elixir-ci.yaml)
+[![Rust CI](https://github.com/Geekfish/ex_bic_exporter/actions/workflows/rust-ci.yaml/badge.svg)](https://github.com/Geekfish/ex_bic_exporter/actions/workflows/rust-ci.yaml)
+
 An Elixir library to extract BIC (Bank Identifier Code) directory data from ISO 9362 PDF files.
 
 The PDF is published by [Swift](https://www.swiftref.com/en/bicsearch).
