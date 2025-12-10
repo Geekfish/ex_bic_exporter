@@ -86,13 +86,6 @@ pdf_data = File.read!("/path/to/ISOBIC.pdf")
 {:ok, records} = BicExporter.extract_table_from_binary(pdf_data)
 ```
 
-### Convert directly to CSV
-
-```elixir
-{:ok, count} = BicExporter.convert_to_csv("/path/to/ISOBIC.pdf", "/path/to/output.csv")
-IO.puts("Extracted #{count} records")
-```
-
 ### Get column headers
 
 ```elixir

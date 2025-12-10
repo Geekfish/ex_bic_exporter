@@ -19,8 +19,6 @@
 //! We detect record boundaries by looking for the creation date (YYYY-MM-DD format)
 //! in the first column - only new records start with a date. Rows without a date
 //! are continuation rows that get merged into the current record.
-//!
-//! JUST TRIGGERING CI
 
 use anyhow::{Context, Result};
 use pdf::content::{Op, TextDrawAdjusted};
