@@ -568,6 +568,27 @@ fn headers() -> Vec<&'static str> {
     HEADERS.to_vec()
 }
 
+// =============================================================================
+// Test-only NIFs to verify Rustler prevents BEAM crashes
+// =============================================================================
+/// NIFs that deliberately panic/unwrap to verify Rustler's runtime safety.
+/// This is only compiled when the `panic_test` feature is enabled.
+/// Rustler should catch this panic and convert it to an Erlang error
+/// rather than crashing the BEAM.
+#[cfg(feature = "panic_test")]
+#[rustler::nif]
+fn deliberate_panic() -> bool {
+    panic!("deliberate_panic: testing Rustler panic safety");
+}
+
+#[cfg(feature = "panic_test")]
+#[rustler::nif]
+#[allow(clippy::unnecessary_literal_unwrap)]
+fn deliberate_unwrap_panic() -> bool {
+    let option: Option<bool> = None;
+    option.expect("deliberate_unwrap_panic: testing Rustler panic safety")
+}
+
 rustler::init!("Elixir.BicExporter.Native");
 
 #[cfg(test)]

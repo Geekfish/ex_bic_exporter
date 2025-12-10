@@ -23,3 +23,5 @@ regex = "1.11"
 default = ["nif_version_2_16"]
 nif_version_2_16 = ["rustler/nif_version_2_16"]
 nif_version_2_17 = ["rustler/nif_version_2_17"]
+# Test-only feature to verify Rustler catches panics and doesn't crash the BEAM
+panic_test = []
